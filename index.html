@@ -60,6 +60,17 @@
   }
   button.sec { background: transparent; color: var(--rojo); }
   button:disabled { opacity: .5; cursor: default; }
+  .parejas { margin-top: 26px; }
+  .parejas h2 { margin: 0 0 12px; font-size: 1.2rem; color: var(--rojo); }
+  .lista-parejas { display: flex; flex-wrap: wrap; gap: 10px; }
+  .pareja {
+    flex: 1 1 160px; text-align: center; padding: 12px 10px; font-size: 1.05rem;
+    background: linear-gradient(135deg, #e3f3fb, #cfeaf7); color: var(--texto);
+    border: 1px solid #a9d7ee; border-left: 5px solid var(--oro); border-radius: 10px;
+    box-shadow: 0 2px 6px rgba(0,0,0,.06);
+  }
+  .pareja b { color: var(--rojo); }
+  .pareja .y { color: var(--oro); font-weight: 700; margin: 0 4px; }
   .nota { color: var(--suave); font-size: .85rem; margin-top: 14px; }
   #aviso { font-weight: 600; min-height: 1.2em; margin-top: 8px; }
   #aviso.ok { color: var(--ok); } #aviso.error { color: var(--rojo); }
@@ -106,6 +117,17 @@
     </thead>
     <tbody id="filas"></tbody>
   </table>
+
+  <section class="parejas">
+    <h2>🤝 Parejas para compartir</h2>
+    <div class="lista-parejas">
+      <div class="pareja">Ramón <span class="y">&amp;</span> <b>Berna</b></div>
+      <div class="pareja"><b>Edu</b> <span class="y">&amp;</span> Guille</div>
+      <div class="pareja"><b>Jose Carlos</b> <span class="y">&amp;</span> Calbert</div>
+      <div class="pareja"><b>Richi</b> <span class="y">&amp;</span> Pablo Lucas</div>
+      <div class="pareja">Fer <span class="y">&amp;</span> <b>Nayo</b></div>
+    </div>
+  </section>
 
   <div class="acciones" id="acciones" hidden>
     <button id="guardar">💾 Guardar en la web</button>
