@@ -9,10 +9,10 @@
     },
     {
         "sitio":  "Wells Félix",
-        "numero":  "",
-        "decimos":  "",
-        "depositario":  "",
-        "comprado":  false,
+        "numero":  "19063",
+        "decimos":  "5",
+        "depositario":  "Ramón",
+        "comprado":  true,
         "comprobado":  false
     },
     {
