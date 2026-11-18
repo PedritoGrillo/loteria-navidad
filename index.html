@@ -26,9 +26,7 @@
     box-shadow: 0 6px 18px rgba(0,0,0,.35); transform: rotate(-3deg);
   }
   main { max-width: 900px; margin: 0 auto; padding: 20px 16px 40px; }
-  .resumen {
-    display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 18px;
-  }
+  .resumen { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
   .resumen div {
     flex: 1 1 140px; background: var(--tarjeta); border: 1px solid var(--linea);
     border-radius: 10px; padding: 10px 14px;
@@ -42,6 +40,9 @@
   td.sitio { text-align: left; font-weight: 600; }
   tr:last-child td { border-bottom: none; }
   tr.completo td { background: #eef8f0; }
+  .num { font-family: ui-monospace, Consolas, monospace; font-size: 1.05rem; letter-spacing: 2px; }
+  .si { color: var(--ok); font-size: 1.3rem; font-weight: 700; }
+  .no { color: #c9b9a3; }
   select {
     padding: 6px; border: 1px solid var(--linea); border-radius: 6px; font: inherit;
     background: #fff; color: var(--texto); min-width: 110px;
@@ -50,16 +51,19 @@
     width: 100%; max-width: 110px; padding: 6px; border: 1px solid var(--linea);
     border-radius: 6px; font: inherit; text-align: center;
   }
-  input.numero { font-family: ui-monospace, Consolas, monospace; font-size: 1.05rem; letter-spacing: 2px; }
   input[type=checkbox] { width: 22px; height: 22px; accent-color: var(--ok); cursor: pointer; }
-  .acciones { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+  .acciones { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; align-items: center; }
   button {
     font: inherit; padding: 9px 16px; border-radius: 8px; border: 1px solid var(--rojo);
     background: var(--rojo); color: #fff; cursor: pointer;
   }
   button.sec { background: transparent; color: var(--rojo); }
+  button:disabled { opacity: .5; cursor: default; }
   .nota { color: var(--suave); font-size: .85rem; margin-top: 14px; }
-  #aviso { color: var(--ok); font-weight: 600; min-height: 1.2em; margin-top: 8px; }
+  #aviso { font-weight: 600; min-height: 1.2em; margin-top: 8px; }
+  #aviso.ok { color: var(--ok); } #aviso.error { color: var(--rojo); }
+  .modo { display: inline-block; background: var(--oro); color: #2b1d14; font-weight: 700;
+    padding: 4px 10px; border-radius: 6px; margin-bottom: 12px; }
 
   /* Móvil: cada sitio como tarjeta */
   @media (max-width: 640px) {
@@ -84,6 +88,8 @@
 </header>
 
 <main>
+  <div id="modo" class="modo" hidden>✏️ Modo edición</div>
+
   <section class="resumen">
     <div><b id="rComprado">0/0</b><span>Sitios comprados</span></div>
     <div><b id="rDecimos">0</b><span>Décimos en total</span></div>
@@ -100,90 +106,85 @@
     <tbody id="filas"></tbody>
   </table>
 
-  <div class="acciones">
-    <button id="compartir">📋 Copiar enlace con los datos</button>
-    <button id="borrar" class="sec">Borrar todo</button>
+  <div class="acciones" id="acciones" hidden>
+    <button id="guardar">💾 Guardar en la web</button>
+    <button id="olvidar" class="sec">Olvidar token</button>
   </div>
   <div id="aviso"></div>
-  <p class="nota">
-    Los datos se guardan en este navegador. Para pasárselos a otra persona, usa
-    «Copiar enlace con los datos» y envíale el enlace: al abrirlo verá lo mismo que tú.
-  </p>
+  <p class="nota" id="nota"></p>
 </main>
 
 <script>
   // ---- Sitios donde compramos (editar aquí para añadir o quitar) ----
-  const SITIOS = [
-    "Wells Antiguo",
-    "Wells Félix",
-    "Cipressi",
-    "Pradal",
-    "Madruga",
-    "Maldito Parné"
-  ];
+  const SITIOS = ["Wells Antiguo", "Wells Félix", "Cipressi", "Pradal", "Madruga", "Maldito Parné"];
   // ---- Quién guarda los décimos de cada sitio ----
-  const CONSIGNATARIOS = ["Alberto", "Berna", "Joshep", "Niachio", "Ramón", "Richi", "Canario", "Fer", "Plucas"];
-  const CLAVE = "loteria-navidad-2026";
+  const DEPOSITARIOS = ["Alberto", "Berna", "Joshep", "Niachio", "Ramón", "Richi", "Canario", "Fer", "Plucas"];
+
+  // Los datos viven en datos.json dentro del repositorio. Solo quien tenga permiso
+  // de escritura en el repo (el dueño) puede cambiarlos.
+  const REPO = "PedritoGrillo/loteria-navidad";
+  const ARCHIVO = "datos.json";
+  const CLAVE_TOKEN = "loteria-token";
+  const EDITAR = new URLSearchParams(location.search).has("editar");
+
+  let datos = vacio();
 
   function vacio() {
-    return SITIOS.map(() => ({ numero: "", decimos: "", consignatario: "", comprado: false, comprobado: false }));
-  }
-
-  function cargar() {
-    // 1) Si el enlace trae datos (#d=...), mandan esos
-    const m = location.hash.match(/^#d=(.+)$/);
-    if (m) {
-      try {
-        const d = JSON.parse(decodeURIComponent(escape(atob(m[1]))));
-        if (Array.isArray(d)) return normalizar(d);
-      } catch (e) {}
-    }
-    // 2) Si no, lo guardado en este navegador
-    try {
-      const d = JSON.parse(localStorage.getItem(CLAVE));
-      if (Array.isArray(d)) return normalizar(d);
-    } catch (e) {}
-    return vacio();
+    return SITIOS.map(nombre => ({ sitio: nombre, numero: "", decimos: "", depositario: "", comprado: false, comprobado: false }));
   }
 
   function normalizar(d) {
-    const base = vacio();
-    return base.map((b, i) => Object.assign(b, d[i] || {}));
+    const lista = Array.isArray(d) ? d : [];
+    return vacio().map(b => Object.assign(b, lista.find(x => x && x.sitio === b.sitio) || {}));
   }
 
-  let datos = cargar();
+  function leerToken() { try { return localStorage.getItem(CLAVE_TOKEN) || ""; } catch (e) { return ""; } }
+  function guardarToken(t) { try { localStorage.setItem(CLAVE_TOKEN, t); } catch (e) {} }
 
-  function guardar() {
-    try { localStorage.setItem(CLAVE, JSON.stringify(datos)); } catch (e) {}
-    // Quita el #d= del enlace una vez cargado, para que no pise cambios posteriores
-    if (location.hash) history.replaceState(null, "", location.pathname + location.search);
-    resumen();
+  async function cargar() {
+    try {
+      const r = await fetch(ARCHIVO + "?t=" + Date.now(), { cache: "no-store" });
+      if (r.ok) datos = normalizar(await r.json());
+    } catch (e) {}
+    pintar();
   }
+
+  function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
 
   function pintar() {
     const tb = document.getElementById("filas");
     tb.innerHTML = "";
-    SITIOS.forEach((nombre, i) => {
-      const r = datos[i];
+    datos.forEach(r => {
       const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td class="sitio">${nombre}</td>
-        <td data-l="Número"><input type="text" class="numero" inputmode="numeric" maxlength="5" placeholder="00000" value="${r.numero}"></td>
-        <td data-l="Décimos"><input type="number" min="0" placeholder="0" value="${r.decimos}"></td>
-        <td data-l="Depositario"><select>
-          <option value="">—</option>
-          ${CONSIGNATARIOS.map(c => `<option${r.consignatario === c ? " selected" : ""}>${c}</option>`).join("")}
-        </select></td>
-        <td data-l="Comprado"><input type="checkbox" data-k="comprado" ${r.comprado ? "checked" : ""}></td>
-        <td data-l="Comprobado"><input type="checkbox" data-k="comprobado" ${r.comprobado ? "checked" : ""}></td>`;
-      const [num, dec] = tr.querySelectorAll("input[type=text], input[type=number]");
-      num.addEventListener("input", () => { num.value = num.value.replace(/\D/g, "").slice(0, 5); r.numero = num.value; guardar(); });
-      num.addEventListener("blur", () => { if (r.numero) { r.numero = r.numero.padStart(5, "0"); num.value = r.numero; guardar(); } });
-      dec.addEventListener("input", () => { r.decimos = dec.value; guardar(); });
-      const sel = tr.querySelector("select");
-      sel.addEventListener("change", () => { r.consignatario = sel.value; guardar(); });
-      tr.querySelectorAll("input[type=checkbox]").forEach(cb =>
-        cb.addEventListener("change", () => { r[cb.dataset.k] = cb.checked; guardar(); marcar(tr, r); }));
+      if (EDITAR) {
+        tr.innerHTML = `
+          <td class="sitio">${esc(r.sitio)}</td>
+          <td data-l="Número"><input type="text" class="num" inputmode="numeric" maxlength="5" placeholder="00000" value="${esc(r.numero)}"></td>
+          <td data-l="Décimos"><input type="number" min="0" placeholder="0" value="${esc(r.decimos)}"></td>
+          <td data-l="Depositario"><select>
+            <option value="">—</option>
+            ${DEPOSITARIOS.map(c => `<option${r.depositario === c ? " selected" : ""}>${c}</option>`).join("")}
+          </select></td>
+          <td data-l="Comprado"><input type="checkbox" data-k="comprado" ${r.comprado ? "checked" : ""}></td>
+          <td data-l="Comprobado"><input type="checkbox" data-k="comprobado" ${r.comprobado ? "checked" : ""}></td>`;
+        const [num, dec] = tr.querySelectorAll("input[type=text], input[type=number]");
+        num.addEventListener("input", () => { num.value = num.value.replace(/\D/g, "").slice(0, 5); r.numero = num.value; resumen(); });
+        num.addEventListener("blur", () => { if (r.numero) { r.numero = r.numero.padStart(5, "0"); num.value = r.numero; } });
+        dec.addEventListener("input", () => { r.decimos = dec.value; resumen(); });
+        const sel = tr.querySelector("select");
+        sel.addEventListener("change", () => { r.depositario = sel.value; });
+        tr.querySelectorAll("input[type=checkbox]").forEach(cb =>
+          cb.addEventListener("change", () => { r[cb.dataset.k] = cb.checked; marcar(tr, r); resumen(); }));
+      } else {
+        const tick = v => v ? '<span class="si">✔</span>' : '<span class="no">—</span>';
+        tr.innerHTML = `
+          <td class="sitio">${esc(r.sitio)}</td>
+          <td data-l="Número" class="num">${r.numero ? esc(r.numero) : '<span class="no">—</span>'}</td>
+          <td data-l="Décimos">${r.decimos ? esc(r.decimos) : '<span class="no">—</span>'}</td>
+          <td data-l="Depositario">${r.depositario ? esc(r.depositario) : '<span class="no">—</span>'}</td>
+          <td data-l="Comprado">${tick(r.comprado)}</td>
+          <td data-l="Comprobado">${tick(r.comprobado)}</td>`;
+      }
       marcar(tr, r);
       tb.appendChild(tr);
     });
@@ -193,7 +194,7 @@
   function marcar(tr, r) { tr.classList.toggle("completo", r.comprado); }
 
   function resumen() {
-    const n = SITIOS.length;
+    const n = datos.length;
     const cuenta = k => datos.filter(r => r[k]).length;
     document.getElementById("rComprado").textContent = `${cuenta("comprado")}/${n}`;
     document.getElementById("rComprobado").textContent = `${cuenta("comprobado")}/${n}`;
@@ -201,24 +202,55 @@
       datos.reduce((s, r) => s + (parseInt(r.decimos, 10) || 0), 0);
   }
 
-  function aviso(t) {
+  function aviso(t, tipo) {
     const a = document.getElementById("aviso");
-    a.textContent = t; setTimeout(() => { a.textContent = ""; }, 3000);
+    a.textContent = t; a.className = tipo || "";
   }
 
-  document.getElementById("compartir").addEventListener("click", async () => {
-    const cod = btoa(unescape(encodeURIComponent(JSON.stringify(datos))));
-    const url = location.origin + location.pathname + "#d=" + cod;
-    try { await navigator.clipboard.writeText(url); aviso("Enlace copiado ✔"); }
-    catch (e) { prompt("Copia este enlace:", url); }
-  });
+  // Guarda datos.json en el repo usando la API de GitHub (necesita token con permiso de escritura)
+  async function guardarEnGitHub() {
+    let token = leerToken();
+    if (!token) {
+      token = (prompt("Pega tu token de GitHub (solo se guarda en este navegador):") || "").trim();
+      if (!token) return;
+      guardarToken(token);
+    }
+    const boton = document.getElementById("guardar");
+    boton.disabled = true; aviso("Guardando…");
+    const url = `https://api.github.com/repos/${REPO}/contents/${ARCHIVO}`;
+    const cab = { "Authorization": "Bearer " + token, "Accept": "application/vnd.github+json" };
+    try {
+      let sha;
+      const g = await fetch(url + "?t=" + Date.now(), { headers: cab, cache: "no-store" });
+      if (g.ok) sha = (await g.json()).sha;
+      else if (g.status === 401) throw new Error("token no válido");
+      const contenido = btoa(unescape(encodeURIComponent(JSON.stringify(datos, null, 2) + "\n")));
+      const p = await fetch(url, {
+        method: "PUT", headers: cab,
+        body: JSON.stringify({ message: "Actualiza datos de la lotería", content: contenido, sha })
+      });
+      if (!p.ok) throw new Error(p.status === 401 || p.status === 403 || p.status === 404 ? "sin permiso (revisa el token)" : "error " + p.status);
+      aviso("Guardado ✔ — la web pública se actualiza en uno o dos minutos.", "ok");
+    } catch (e) {
+      aviso("No se ha podido guardar: " + e.message, "error");
+    } finally {
+      boton.disabled = false;
+    }
+  }
 
-  document.getElementById("borrar").addEventListener("click", () => {
-    if (confirm("¿Borrar todos los datos de este navegador?")) { datos = vacio(); guardar(); pintar(); }
-  });
+  if (EDITAR) {
+    document.getElementById("modo").hidden = false;
+    document.getElementById("acciones").hidden = false;
+    document.getElementById("nota").textContent =
+      "Los cambios no se publican hasta que pulses «Guardar en la web». Solo funciona con un token de GitHub con permiso de escritura en el repositorio.";
+    document.getElementById("guardar").addEventListener("click", guardarEnGitHub);
+    document.getElementById("olvidar").addEventListener("click", () => {
+      try { localStorage.removeItem(CLAVE_TOKEN); } catch (e) {}
+      aviso("Token olvidado en este navegador.", "ok");
+    });
+  }
 
-  pintar();
-  if (location.hash) guardar(); // si vino por enlace, lo guarda en este navegador
+  cargar();
 </script>
 </body>
 </html>
