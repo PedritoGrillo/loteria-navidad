@@ -93,7 +93,7 @@
   <table>
     <thead>
       <tr>
-        <th>Sitio</th><th>Número</th><th>Décimos</th><th>Consignatario</th>
+        <th>Sitio</th><th>Número</th><th>Décimos</th><th>Depositario</th>
         <th>Comprado</th><th>Comprobado</th>
       </tr>
     </thead>
@@ -170,7 +170,7 @@
         <td class="sitio">${nombre}</td>
         <td data-l="Número"><input type="text" class="numero" inputmode="numeric" maxlength="5" placeholder="00000" value="${r.numero}"></td>
         <td data-l="Décimos"><input type="number" min="0" placeholder="0" value="${r.decimos}"></td>
-        <td data-l="Consignatario"><select>
+        <td data-l="Depositario"><select>
           <option value="">—</option>
           ${CONSIGNATARIOS.map(c => `<option${r.consignatario === c ? " selected" : ""}>${c}</option>`).join("")}
         </select></td>
