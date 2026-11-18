@@ -1,0 +1,50 @@
+[
+    {
+        "sitio":  "Wells Antiguo",
+        "numero":  "",
+        "decimos":  "",
+        "depositario":  "",
+        "comprado":  false,
+        "comprobado":  false
+    },
+    {
+        "sitio":  "Wells Félix",
+        "numero":  "",
+        "decimos":  "",
+        "depositario":  "",
+        "comprado":  false,
+        "comprobado":  false
+    },
+    {
+        "sitio":  "Cipressi",
+        "numero":  "",
+        "decimos":  "",
+        "depositario":  "",
+        "comprado":  false,
+        "comprobado":  false
+    },
+    {
+        "sitio":  "Pradal",
+        "numero":  "",
+        "decimos":  "",
+        "depositario":  "",
+        "comprado":  false,
+        "comprobado":  false
+    },
+    {
+        "sitio":  "Madruga",
+        "numero":  "",
+        "decimos":  "",
+        "depositario":  "",
+        "comprado":  false,
+        "comprobado":  false
+    },
+    {
+        "sitio":  "Maldito Parné",
+        "numero":  "",
+        "decimos":  "",
+        "depositario":  "",
+        "comprado":  false,
+        "comprobado":  false
+    }
+]
