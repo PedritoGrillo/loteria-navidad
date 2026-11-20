@@ -60,6 +60,24 @@
   }
   button.sec { background: transparent; color: var(--rojo); }
   button:disabled { opacity: .5; cursor: default; }
+  .recogida { margin-top: 26px; }
+  .recogida h2 { margin: 0 0 12px; font-size: 1.2rem; color: var(--rojo); }
+  .lista-recogida { display: flex; flex-wrap: wrap; gap: 10px; }
+  .recoge {
+    flex: 1 1 160px; position: relative; text-align: center; padding: 14px 10px 12px;
+    background: #fffaf0; border: 2px dashed var(--oro); border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,.06);
+  }
+  .recoge::before, .recoge::after {          /* muescas de boleto */
+    content: ""; position: absolute; top: 50%; width: 16px; height: 16px; margin-top: -8px;
+    background: var(--fondo); border-radius: 50%; border: 2px dashed var(--oro);
+  }
+  .recoge::before { left: -10px; } .recoge::after { right: -10px; }
+  .recoge .quien { font-size: 1.15rem; font-weight: 700; }
+  .recoge .flecha { color: var(--oro); font-size: 1.2rem; line-height: 1.4; }
+  .recoge .donde { color: var(--rojo); font-weight: 600; }
+  .recoge .estado { margin-top: 6px; font-size: .85rem; color: var(--suave); }
+  .recoge .estado.ok { color: var(--ok); font-weight: 600; }
   .parejas { margin-top: 26px; }
   .parejas h2 { margin: 0 0 12px; font-size: 1.2rem; color: var(--rojo); }
   .lista-parejas { display: flex; flex-wrap: wrap; gap: 10px; }
@@ -119,6 +137,11 @@
     <tbody id="filas"></tbody>
   </table>
 
+  <section class="recogida">
+    <h2>🎟️ Quién recoge los billetes</h2>
+    <div class="lista-recogida" id="recogida"></div>
+  </section>
+
   <section class="parejas">
     <h2>🤝 Parejas para compartir</h2>
     <div class="lista-parejas">
@@ -140,9 +163,18 @@
 
 <script>
   // ---- Sitios donde compramos (editar aquí para añadir o quitar) ----
-  const SITIOS = ["Wells Antiguo", "Wells Félix", "Cipressi", "Pradal", "Madruga", "Maldito Parné"];
+  const SITIOS = ["Wells Cantina", "Wells Félix", "Cipressi", "Pradal", "Madruga", "Maldito Parné"];
   // ---- Quién guarda los décimos de cada sitio ----
   const DEPOSITARIOS = ["Alberto", "Berna", "Joshep", "Niachio", "Ramón", "Richi", "Canario", "Fer", "Plucas"];
+
+  // ---- Quién va a recoger los billetes de cada sitio ----
+  const RECOGIDA = [
+    ["Richi", "Maldito Parné"],
+    ["Berna", "Cipressi"],
+    ["Edu", "Pradal"],
+    ["Jose Carlos", "Wells Cantina"],
+    ["Nayo", "Madruga"]
+  ];
 
   // Los datos viven en datos.json dentro del repositorio. Solo quien tenga permiso
   // de escritura en el repo (el dueño) puede cambiarlos.
@@ -215,6 +247,17 @@
     resumen();
   }
 
+  function pintarRecogida() {
+    document.getElementById("recogida").innerHTML = RECOGIDA.map(([quien, donde]) => {
+      const r = datos.find(x => x.sitio === donde) || {};
+      const estado = r.comprado
+        ? `<div class="estado ok">✔ Recogido${r.numero ? " · " + esc(r.numero) : ""}</div>`
+        : `<div class="estado">Pendiente</div>`;
+      return `<div class="recoge"><div class="quien">${esc(quien)}</div>
+        <div class="flecha">⬇</div><div class="donde">${esc(donde)}</div>${estado}</div>`;
+    }).join("");
+  }
+
   function marcar(tr, r) { tr.classList.toggle("completo", r.comprado); }
 
   function resumen() {
@@ -224,6 +267,7 @@
     document.getElementById("rComprobado").textContent = `${cuenta("comprobado")}/${n}`;
     document.getElementById("rDecimos").textContent =
       datos.reduce((s, r) => s + (parseInt(r.decimos, 10) || 0), 0);
+    pintarRecogida();
   }
 
   function aviso(t, tipo) {
